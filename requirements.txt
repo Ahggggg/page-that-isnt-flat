@@ -1,0 +1,9 @@
+# Inference: install the torch build for your accelerator first (https://pytorch.org/get-started/locally/).
+torch>=2.6
+numpy>=1.24
+scipy>=1.10
+pillow>=10.1
+tifffile>=2023.7
+# The organizers' label arrays are zstd-compressed. Python 3.14+ decodes zstd itself; on older Python add ONE of:
+#   zstandard>=0.22        (small; recommended)
+#   numcodecs>=0.12

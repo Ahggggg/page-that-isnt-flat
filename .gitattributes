@@ -1,0 +1,8 @@
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.mp4 binary
+*.m4s binary
+*.png binary
+*.jpg binary
+*.npy binary

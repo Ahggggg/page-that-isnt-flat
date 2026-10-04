@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Ignore the output video from Git but not videos you import into src/.
+out
+
+# Generated inputs: film-making/data/*.py writes public/data, the Blender shots go in public/frames
+public/data
+public/frames

@@ -1,0 +1,1254 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Page That Isn't Flat</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2308090c'/%3E%3Cpath d='M5 19c4-6 7 2 11-3s7 1 11-4' fill='none' stroke='%23f0b45c' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M5 22h22' stroke='%2363cfe0' stroke-width='1.6' stroke-dasharray='3 2'/%3E%3C/svg%3E">
+<meta name="description" content="A virtually unwrapped Herculaneum page looks flat; the papyrus inside the scan is not. A scroll-driven film and the measurements behind it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* One page, one stage. The stage is pinned to the viewport and the page's scroll position is the only clock: the first
+   minute is the film (scrubbed), the rest are live scenes drawn from the same data the film was made from.
+   Deliberately one dark look: CT and model maps read on black. */
+:root {
+  --bg: #08090c;
+  --plate: #101318;
+  --plate-2: #151a21;
+  --rule: #232a33;
+  --text: #ebe5d9;
+  --soft: #c9c3b7;
+  --dim: #8f96a0;
+  --ink: #f0b45c;
+  --page: #63cfe0;
+  --warn: #e5624c;
+  --display: "Gentium Book Plus", "Gentium Plus", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --hud: 76px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); }
+body { color: var(--text); font: 300 17px/1.6 var(--body); }
+h2, h3 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; }
+p { margin: 0 0 12px; }
+p:last-child { margin-bottom: 0; }
+b { font-weight: 500; }
+em { font-style: italic; color: var(--soft); }
+code { font: 400 .9em/1.4 var(--mono); color: var(--ink); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.u { text-transform: none; }   /* keeps µm lower-case inside upper-case labels (µ capitalises to Μ) */
+.eyebrow, .lbl { font: 500 12px/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.eyebrow { color: var(--page); }
+button { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* stage and layers */
+#story { position: relative; }
+.stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
+  background: radial-gradient(ellipse 75% 65% at 50% 42%, #0d1117 0%, var(--bg) 72%); }
+.layer { position: absolute; inset: 0 0 var(--hud) 0; opacity: 0; visibility: hidden; overflow: hidden; }
+.scene { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 28px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 28px, #000 calc(100% - 32px), transparent); }
+.leads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; overflow: visible;
+  filter: drop-shadow(0 0 5px rgba(99,207,224,.55)); }
+.leads path { fill: none; stroke: var(--page); stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 1; }
+.marks { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+.mark { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, #eafcff 0 2.5px, rgba(99,207,224,.25) 3.5px 100%); border: 1.5px solid var(--page);
+  box-shadow: 0 0 14px 2px rgba(99,207,224,.55); }
+.mark::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 1px solid rgba(99,207,224,.6);
+  animation: ping 2.2s cubic-bezier(.2,.6,.3,1) infinite; }
+@keyframes ping { from { transform: scale(.45); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+.liberty { position: absolute; top: 12px; left: 24px; right: 24px; z-index: 7; display: flex; align-items: center; gap: 9px;
+  font: 400 11.5px/1.3 var(--mono); color: var(--dim); pointer-events: none; transition: opacity .25s; }
+.liberty::before { content: "i"; flex: none; width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--dim);
+  display: grid; place-items: center; font: italic 500 10px/1 var(--display); }
+.liberty:empty { opacity: 0; }
+
+/* film layer: the 16:9 frame, call-outs placed over it */
+.film-layer { display: grid; place-items: center; padding: 38px 24px 6px; }
+.frame { --fw: min(calc(100vw - 48px), calc((100svh - var(--hud) - 48px) * 16 / 9)); position: relative; width: var(--fw);
+  aspect-ratio: 16 / 9; container-type: inline-size; }
+.frame video { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 10px; background: #06080c;
+  box-shadow: 0 40px 90px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(235,229,217,.07); }
+.bubbles { position: absolute; inset: 0; pointer-events: none; }
+.bubble, .card { padding: .8em 1.05em .9em; border-radius: 14px; color: var(--text); text-wrap: pretty;
+  background: linear-gradient(160deg, rgba(22,28,37,.82), rgba(9,11,16,.76));
+  border: 1px solid rgba(235,229,217,.13); box-shadow: 0 22px 50px -12px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); position: relative; }
+.bubble::before, .card::before { content: ""; position: absolute; left: 1.05em; right: 1.05em; top: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--page) 25%, var(--ink) 75%, transparent); opacity: .85; }
+.bubble { position: absolute; width: max-content; opacity: 0; visibility: hidden; font: 300 clamp(13px, 1.32cqw, 21px)/1.42 var(--body);
+  will-change: transform, opacity; }
+.bubble.note { background: linear-gradient(160deg, rgba(14,18,24,.86), rgba(8,10,14,.82)); }
+.k { display: flex; align-items: center; gap: .6em; margin-bottom: .4em; font: 500 .66em/1.3 var(--mono); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--page); }
+.k b { font-weight: 500; color: var(--ink); letter-spacing: .04em; }
+.k.warn { color: var(--warn); }
+.bubble p { margin: 0; }
+.w { transition: opacity .12s linear; }
+.hint { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
+  padding: 10px 18px 10px 12px; border-radius: 999px; background: rgba(8,9,12,.6); border: 1px solid rgba(235,229,217,.18);
+  font: 500 13px/1 var(--mono); letter-spacing: .06em; color: var(--soft); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  white-space: nowrap; pointer-events: none; }
+.mouse { width: 18px; height: 28px; border: 1.5px solid var(--soft); border-radius: 9px; position: relative; }
+.mouse i { position: absolute; left: 50%; top: 5px; width: 2px; height: 6px; margin-left: -1px; border-radius: 1px; background: var(--ink);
+  animation: wheel 1.6s ease-in-out infinite; }
+@keyframes wheel { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(8px); opacity: 0; } 100% { opacity: 0; } }
+
+/* live scenes: visual on the left, narration on the right */
+.scene .inner { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 28vw, 420px); gap: 28px clamp(28px, 4vw, 64px);
+  align-items: center; min-height: 100%; padding: clamp(48px, 7vh, 80px) clamp(24px, 4.5vw, 72px) 20px; will-change: transform; }
+.vis { min-width: 0; display: grid; gap: 12px; align-content: center; }
+.viswrap { min-width: 0; display: grid; align-content: center; }
+.narr { display: grid; align-content: center; }
+.narr .card { grid-area: 1 / 1; align-self: center; opacity: 0; font: 300 clamp(15px, 1.12vw, 18px)/1.55 var(--body); }
+.card .big { display: block; font: 400 clamp(34px, 3vw, 46px)/1 var(--mono); color: var(--ink); margin: .1em 0 .3em; }
+.dots { display: flex; gap: 7px; margin-top: 18px; grid-area: 2 / 1; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(235,229,217,.2); transition: background .2s, transform .2s; }
+.dots i.on { background: var(--page); transform: scale(1.3); }
+canvas { display: block; width: 100%; height: auto; border-radius: 6px; background: #050608; }
+.rowlbl { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 18px; font: 400 12px/1.4 var(--mono); color: var(--dim); }
+.rowlbl .c { color: var(--page); }
+.ctl { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; font: 400 12.5px/1 var(--mono); color: var(--dim); }
+.ctl b { color: var(--text); font-weight: 500; min-width: 7ch; text-align: right; }
+input[type=range] { width: 100%; accent-color: var(--page); }
+.btn { font: 500 13px/1 var(--mono); color: var(--bg); background: var(--page); border: 0; border-radius: 999px; padding: 11px 18px; cursor: pointer; }
+.btn:hover { background: #8fe0ec; }
+#cut-strip { cursor: ns-resize; touch-action: none; }
+.biglbl { font: 500 12px/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.biglbl b { font: 400 30px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--page); margin-left: 12px; vertical-align: -4px; }
+
+/* the window: maps | curve */
+.slab-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; align-items: center; }
+.readout { display: flex; gap: 28px; font: 400 clamp(18px, 1.7vw, 26px)/1.2 var(--mono); }
+.readout .r { color: var(--ink); } .readout .a { color: var(--page); }
+.readout small { display: block; font: 400 12px/1.4 var(--mono); color: var(--dim); margin-bottom: 2px; }
+#sl-curve { width: 100%; height: auto; display: block; overflow: visible; }
+
+/* flip */
+.flipbox { perspective: 1600px; }
+.card3d { position: relative; aspect-ratio: 1700 / 597; transform-style: preserve-3d; }
+.card3d img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 6px; backface-visibility: hidden; }
+.card3d img + img { transform: rotateX(180deg); }
+.pairstats { display: flex; gap: 32px; flex-wrap: wrap; font: 400 13px/1.5 var(--mono); color: var(--dim); }
+.pairstats b { font-size: 20px; }
+.pairstats .f b { color: var(--ink); } .pairstats .rv b { color: var(--warn); }
+
+/* coverage */
+.mapbox { position: relative; }
+#cv-map { cursor: crosshair; }
+.tip { position: absolute; z-index: 2; pointer-events: none; padding: 8px 11px; border-radius: 8px; background: rgba(8,9,12,.88);
+  border: 1px solid rgba(235,229,217,.2); font: 400 12px/1.45 var(--mono); color: var(--soft); white-space: nowrap; opacity: 0;
+  transform: translate(14px, -50%); transition: opacity .12s; }
+.tip b { color: var(--text); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 400 12px/1.4 var(--mono); color: var(--dim); }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 6px; }
+#pg-chart { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
+.pgread { font: 400 12.5px/1.5 var(--mono); color: var(--soft); min-height: 1.5em; }
+.pgread b { font-weight: 500; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--rule); }
+.tile { padding: 14px 16px 4px 0; opacity: .32; transition: opacity .3s; }
+.tile + .tile { padding-left: 16px; border-left: 1px solid var(--rule); }
+.tile.on { opacity: 1; }
+.tile .v { display: inline-block; font: 400 clamp(26px, 2.6vw, 40px)/1.05 var(--mono); font-variant-numeric: tabular-nums; }
+.tile.on .v { color: var(--page); }
+.tile .kk { font-size: 13.5px; line-height: 1.4; color: var(--dim); margin-top: 6px; }
+.fine { font: 400 11.5px/1.5 var(--mono); color: var(--dim); }
+
+/* takeaway */
+.solo .inner { grid-template-columns: minmax(0, 1fr); max-width: 1240px; margin: 0 auto; }
+.huge { font: 400 clamp(72px, 13vw, 190px)/1 var(--mono); color: var(--ink); letter-spacing: -.02em; }
+.tkdek { font-size: clamp(17px, 1.5vw, 21px); line-height: 1.5; color: var(--soft); max-width: 58ch; margin: -6px 0 6px; }
+.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.fig { padding: 20px 20px 20px 0; opacity: 0; transform: translateY(12px); }
+.fig + .fig { padding-left: 20px; border-left: 1px solid var(--rule); }
+.fig .v { font: 400 clamp(28px, 3vw, 42px)/1.05 var(--mono); font-variant-numeric: tabular-nums; }
+.fig .v.ink { color: var(--ink); }
+.fig .kk { font-size: 14.5px; line-height: 1.45; color: var(--dim); margin-top: 8px; }
+.closing { font: 400 clamp(24px, 2.6vw, 38px)/1.25 var(--display); max-width: 30ch; opacity: 0; }
+
+/* why it matters: the scroll as backdrop */
+.why .bg { position: absolute; inset: 0; background: #000 url("film/poster.jpg") center / cover no-repeat; opacity: .55; will-change: transform; }
+.why .bg::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(8,9,12,.96) 0%, rgba(8,9,12,.82) 42%, rgba(8,9,12,.25) 100%), linear-gradient(0deg, rgba(8,9,12,.9), transparent 40%); }
+.why .inner { grid-template-columns: minmax(0, 620px) minmax(0, 1fr); align-content: center; position: relative; }
+.why h2 { font-size: clamp(34px, 4.6vw, 64px); line-height: 1.02; margin: 8px 0 26px; }
+.why .narr { align-content: start; }
+.why .narr .card { font-size: clamp(15.5px, 1.2vw, 19px); }
+.rule { grid-column: 1 / -1; opacity: 0; }
+.rule svg { width: 100%; max-width: 1100px; height: auto; display: block; }
+
+/* register */
+.reg .inner { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.reg h2, .doc h2 { font-size: clamp(28px, 3.1vw, 44px); line-height: 1.08; margin: 10px 0 14px; }
+.reg .dek { font-size: 16px; color: var(--soft); max-width: 52ch; }
+.idx { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 2px; counter-reset: s; }
+.idx button { width: 100%; text-align: left; display: flex; gap: 12px; align-items: baseline; background: none; border: 0; padding: 7px 10px;
+  border-radius: 6px; cursor: pointer; font: 400 14px/1.35 var(--body); color: var(--dim); }
+.idx button .num { color: var(--dim); font-size: 12px; }
+.idx button:hover { color: var(--soft); background: rgba(235,229,217,.04); }
+.idx button.on { color: var(--text); background: rgba(99,207,224,.08); }
+.idx button.on .num { color: var(--page); }
+.regcards { display: grid; }
+.regcards .card { grid-area: 1 / 1; opacity: 0; font-size: 15.5px; line-height: 1.55; padding: 22px 24px; align-self: center; }
+.regcards h3 { font-size: clamp(20px, 1.8vw, 26px); line-height: 1.2; margin-bottom: 14px; }
+.regcards figure { margin: 0 0 14px; }
+.regcards img { display: block; max-width: 100%; height: auto; max-height: 190px; border-radius: 4px; border: 1px solid var(--rule); }
+.regcards figcaption { font: 400 11.5px/1.5 var(--mono); color: var(--dim); margin-top: 6px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+.two .h { font: 500 11px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip { font: 400 12.5px/1.35 var(--mono); padding: 5px 9px; border-radius: 4px; border: 1px solid var(--rule); }
+.chip.out { color: var(--page); border-color: rgba(99,207,224,.45); }
+.chip.open { color: var(--dim); }
+.chip.out::before { content: "rules out · "; opacity: .7; }
+.chip.open::before { content: "leaves open · "; opacity: .7; }
+
+/* method and liberties */
+.doc .inner { grid-template-columns: minmax(0, 1fr); max-width: 1320px; margin: 0 auto; align-content: center; }
+.dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; margin: 0; }
+.dl > div { background: var(--plate); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; opacity: 0; transform: translateY(10px); }
+.dl dt { font: 500 11.5px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--page); margin-bottom: 6px; }
+.dl dd { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--soft); }
+.credits { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 40px; margin-top: 22px; padding-top: 18px;
+  border-top: 1px solid var(--rule); font-size: 14.5px; color: var(--dim); opacity: 0; }
+.credits .never { grid-column: 1 / -1; color: var(--ink); font-size: 15.5px; }
+
+/* HUD */
+.hud { position: absolute; left: 0; right: 0; bottom: 0; height: var(--hud); z-index: 8; display: flex; align-items: center; gap: 16px;
+  padding: 0 24px; font: 400 12.5px/1 var(--mono); color: var(--dim); }
+.hud-play { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(235,229,217,.25); background: rgba(235,229,217,.04);
+  display: grid; place-items: center; cursor: pointer; padding: 0; }
+.hud-play svg { width: 15px; height: 15px; fill: var(--ink); }
+.hud-play .i-pause, .hud-play[aria-pressed=true] .i-play { display: none; }
+.hud-play[aria-pressed=true] .i-pause { display: inline; }
+.hud-play:hover { border-color: var(--ink); }
+.hud-now { flex: none; width: 190px; display: flex; gap: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); white-space: nowrap; overflow: hidden; }
+.hud-now .num { color: var(--ink); }
+.track { flex: 1; min-width: 0; display: flex; gap: 3px; align-items: center; height: 30px; cursor: pointer; touch-action: none; }
+.seg { position: relative; flex-basis: 0; height: 4px; padding: 0; border: 0; border-radius: 2px; background: rgba(235,229,217,.14);
+  overflow: hidden; cursor: pointer; transition: height .15s ease; }
+.seg i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--page), var(--ink)); transform-origin: left center; transform: scaleX(0); }
+.track:hover .seg { height: 7px; }
+.seg.on { background: rgba(235,229,217,.24); }
+.hud-menu { flex: none; background: none; border: 1px solid rgba(235,229,217,.2); border-radius: 999px; padding: 8px 14px; cursor: pointer; color: var(--soft); }
+.hud-menu:hover { border-color: var(--page); }
+.menu { position: absolute; right: 24px; bottom: calc(var(--hud) - 6px); z-index: 9; width: min(320px, calc(100vw - 48px)); max-height: 70svh; overflow: auto;
+  margin: 0; padding: 8px; list-style: none; background: rgba(13,16,21,.97); border: 1px solid var(--rule); border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+.menu[hidden] { display: none; }
+.menu button { width: 100%; display: flex; gap: 12px; text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  font: 400 14px/1.3 var(--body); color: var(--soft); }
+.menu button .num { color: var(--dim); font-size: 12px; }
+.menu button:hover, .menu button.on { background: rgba(99,207,224,.08); color: var(--text); }
+
+@media (max-width: 760px) {
+  :root { --hud: 64px; }
+  .film-layer { place-items: start center; padding: 15svh 16px 0; }
+  .frame { --fw: calc(100vw - 32px); }
+  .bubbles { inset: auto 0 auto 0; top: calc(100% + 18px); display: grid; gap: 12px; }
+  .bubble { position: relative; grid-area: 1 / 1; left: 0 !important; top: 0 !important; max-width: none !important; width: 100%; font-size: 16px; }
+  .bubble.note { grid-area: 2 / 1; font-size: 14.5px; }
+  .scene .inner, .why .inner, .reg .inner { grid-template-columns: minmax(0, 1fr); align-content: start; padding: 54px 16px 24px; }
+  .scene .inner.pin { display: flex; flex-direction: column; align-items: stretch; height: 100%; min-height: 0; gap: 14px; padding-bottom: 12px; }
+  .viswrap { flex: 1 1 0; min-height: 0; overflow: hidden; }
+  .pin .narr { flex: none; position: relative; display: block; }
+  .pin .narr .card { position: absolute; left: 0; right: 0; bottom: 0; font-size: 15px; }
+  .pin .dots { display: none; }
+  #sl-curve { max-height: 30svh; }
+  .reg .idx { display: none; }
+  .regcards .card { align-self: start; }
+  .slab-grid { grid-template-columns: minmax(0, 1fr); }
+  .figs { grid-template-columns: 1fr 1fr; }
+  .fig:nth-child(3) { padding-left: 0; border-left: 0; }
+  .fig:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .two { grid-template-columns: 1fr; }
+  .tiles .kk { font-size: 12px; }
+  .liberty { top: 10px; left: 16px; right: 16px; font-size: 10.5px; }
+  .hud { gap: 10px; padding: 0 14px; }
+  .hud-now { display: none; }
+  .hint { bottom: 10%; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .mark::after, .mouse i { animation: none; } }
+</style>
+
+<main id="story" aria-label="The Page That Isn't Flat: a film and the measurements behind it. Scroll to move through it.">
+<div class="stage" id="stage">
+
+  <!-- 01-06: the film -->
+  <div class="layer film-layer" id="L-film">
+    <div class="frame" id="frame">
+      <video id="sv" muted playsinline preload="auto" poster="film/start.jpg" aria-hidden="true"></video>
+      <div class="bubbles" id="bubbles"></div>
+      <div class="hint" id="hint" aria-hidden="true"><span class="mouse"><i></i></span>Scroll to begin</div>
+    </div>
+  </div>
+
+  <!-- 07: the cut -->
+  <section class="layer scene" id="L-cut" aria-label="The cut">
+    <div class="inner">
+      <div class="vis">
+        <div class="lbl">The page, as the ink model reads it · 9.8 mm of one line</div>
+        <canvas id="cut-strip" width="2048" height="640" aria-label="Model ink output along one line of text; drag up or down to move the cut"></canvas>
+        <canvas id="cut-xs" width="2048" height="545" aria-label="CT cross-section straight down through the page along the cut"></canvas>
+        <div class="rowlbl"><span id="cut-xslbl">CT cross-section along the cut · true scale</span><span class="c" id="cut-k1">- - - traced surface (the “flat” page)</span><span class="c" id="cut-k2">▮ the 62 layers the model reads ≈ 150 µm</span></div>
+        <div class="ctl"><label for="cut-ex">Depth stretch</label><input id="cut-ex" type="range" min="1" max="10" step="0.5" value="8"><b class="num" id="cut-exv">×8</b></div>
+      </div>
+      <div class="narr"></div>
+    </div>
+  </section>
+
+  <!-- 08: the window -->
+  <section class="layer scene" id="L-slab" aria-label="The reading window">
+    <div class="inner">
+      <div class="vis">
+        <div class="biglbl">Reading window moved by<b id="sl-k">0 µm</b></div>
+        <div class="slab-grid">
+          <div class="vis">
+            <canvas id="sl-strip" width="1024" height="320" aria-label="Model output along the line for the current window"></canvas>
+            <canvas id="sl-xs" width="2048" height="436" aria-label="CT along the cut with the model's 62 layers shaded"></canvas>
+            <div class="rowlbl"><span id="sl-xslbl">CT along the cut · depth ×8</span><span class="c">▮ the layers the model reads</span></div>
+          </div>
+          <div class="vis">
+            <svg id="sl-curve" viewBox="0 0 440 330" role="img" aria-label="Agreement with the published map and AUC against the organizers' labels, against window offset"></svg>
+            <div class="readout"><div class="r"><small>agreement with the published map, r</small><span id="sl-r">–</span></div><div class="a"><small>labelled letters vs papyrus, AUC</small><span id="sl-a">–</span></div></div>
+          </div>
+        </div>
+        <div class="ctl"><label for="sl-range">Window</label><input id="sl-range" type="range" min="0" max="16" step="1" value="8"><b class="num" id="sl-rv">0 µm</b></div>
+      </div>
+      <div class="narr"></div>
+    </div>
+  </section>
+
+  <!-- 09: other pages -->
+  <section class="layer scene" id="L-pages" aria-label="Other pages">
+    <div class="inner">
+      <div class="vis">
+        <div class="lbl">PHerc. 139 · labelled pages · AUC lost as the window moves off the trace</div>
+        <svg id="pg-chart" viewBox="0 0 640 372" role="img" aria-label="AUC lost against window offset on the labelled pages of PHerc. 139"></svg>
+        <div class="legend" id="pg-legend"></div>
+        <div class="pgread" id="pg-read">Point at the chart to read each page at one offset.</div>
+        <div class="fine">Thick lines: the full labelled regions of four pages. Thin lines: 6 mm crops of seven more pages and of a second region of w035. AUC lost is the score on the trace minus the score at that offset, so higher is worse; the shaded band is a loss under 0.05. These runs used a faster tiling (no tile overlap, half precision), which on w035 scores 0.02–0.03 lower in absolute AUC than the organizers’ tiling at every offset, so compare losses along a line rather than scores between chapters. The labels are probably among this model’s training labels, so none of these scores is a held-out accuracy, and on 6 mm crops differences below about 0.03–0.05 are not resolved.</div>
+      </div>
+      <div class="narr"></div>
+    </div>
+  </section>
+
+  <!-- 10: flip -->
+  <section class="layer scene" id="L-flip" aria-label="Flip the sheet">
+    <div class="inner">
+      <div class="vis">
+        <div class="lbl" id="fl-lbl">Front of the sheet first (as trained)</div>
+        <div class="flipbox"><div class="card3d" id="fl-card">
+          <img src="assets/band_0.jpg" alt="Model output over the whole band, front face first: lines of writing" width="1700" height="597">
+          <img src="assets/band_R0.jpg" alt="Model output with the layers reversed: scattered speckle" width="1700" height="597">
+        </div></div>
+        <div class="pairstats"><span class="f">front first<br><b class="num" id="fl-f">–</b></span><span class="rv">back to front<br><b class="num" id="fl-r">–</b></span><span><br><button class="btn" id="fl-btn">Flip the layers</button></span></div>
+      </div>
+      <div class="narr"></div>
+    </div>
+  </section>
+
+  <!-- 10: the whole band -->
+  <section class="layer scene" id="L-cov" aria-label="The whole band">
+    <div class="inner">
+      <div class="vis">
+        <div class="lbl">A band of the page 17 × 49 mm · CT only, no ink model</div>
+        <div class="mapbox"><canvas id="cv-map" width="1700" height="597" aria-label="Map of how far the papyrus sits above or below the traced surface across the band"></canvas><div class="tip" id="cv-tip"></div></div>
+        <div class="legend">
+          <span><span class="sw" style="background:#2a63c9"></span>papyrus above the trace</span>
+          <span><span class="sw" style="background:#12161e;border:1px solid #333"></span>on it</span>
+          <span><span class="sw" style="background:#eb8c32"></span>below it (±48 µm at full colour)</span>
+          <span id="cv-hil" style="opacity:0"><span class="sw" style="background:var(--page)"></span>highlighted</span>
+        </div>
+        <div class="tiles">
+          <div class="tile" id="cv-t1"><div class="v num">–</div><div class="kk">more than 24 µm off the traced surface</div></div>
+          <div class="tile" id="cv-t2"><div class="v num">–</div><div class="kk">more than 48 µm off</div></div>
+          <div class="tile" id="cv-t3"><div class="v num">–</div><div class="kk">outside the 62 layers the model reads</div></div>
+        </div>
+        <div class="fine">Offset: the brightest papyrus layer at each point (Gaussian prior about the surface, σ = 30 layers). Colours and the pointer readout are smoothed over about 0.1 mm; highlights and percentages use the unsmoothed estimate. Text lines run left to right; the crosshatch is the papyrus’s own fibre layers.</div>
+      </div>
+      <div class="narr"></div>
+    </div>
+  </section>
+
+  <!-- 11: takeaway -->
+  <section class="layer scene solo" id="L-take" aria-label="How close is close enough">
+    <div class="inner">
+      <div class="vis" style="gap:22px">
+        <div class="eyebrow">How close is close enough? Usually about</div>
+        <div class="huge">±40 µm</div>
+        <p class="tkdek">How far the reading window can usually sit off the traced surface while the model still tells the organizers’ labelled letters from papyrus almost as well as on the trace (within 0.05 AUC). Not on every page: w044 loses about 0.10 at −38 µm. No tested region held to ±55 µm.</p>
+        <div class="figs">
+          <div class="fig"><div class="v num ink" id="tk-crops"></div><div class="kk">labelled page crops within 0.05 AUC at ±38 µm; <span id="tk-full"></span> full labelled regions</div></div>
+          <div class="fig"><div class="v num" data-n="inWin"></div><div class="kk">of the w035 band where the papyrus stays inside the model’s 150 µm reading slab</div></div>
+          <div class="fig"><div class="v num" data-n="gt24"></div><div class="kk">where it wanders more than 24 µm off the traced surface</div></div>
+          <div class="fig"><div class="v num" data-n="rep4"></div><div class="kk">agreement of our rerun with the organizers’ published map</div></div>
+        </div>
+        <div class="closing">On a page traced as well as this one, if ink goes missing, the mesh is rarely the reason.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12: why it matters -->
+  <section class="layer scene why" id="L-why" aria-label="Why it matters">
+    <div class="bg" id="why-bg"></div>
+    <div class="inner">
+      <div>
+        <div class="eyebrow">Why it matters</div>
+        <h2>No ink, or no ink yet?</h2>
+        <div class="narr"></div>
+      </div>
+      <div></div>
+      <div class="rule" id="why-rule">
+        <svg viewBox="0 0 1100 150" role="img" aria-label="How far the trace sits from the inked surface: within about 40 µm the trace is usually not why ink goes missing; at about 100 µm, on transferred meshes, it can be">
+          <defs><linearGradient id="zone" x1="0" x2="1"><stop offset="0" stop-color="#63cfe0" stop-opacity=".32"/><stop offset="1" stop-color="#63cfe0" stop-opacity=".1"/></linearGradient></defs>
+          <rect x="40" y="42" width="344" height="34" rx="4" fill="url(#zone)" stroke="#63cfe0" stroke-opacity=".6"/>
+          <text x="52" y="64" fill="#ebe5d9" font-family="IBM Plex Mono, monospace" font-size="14">most pages: letters still found</text>
+          <text x="396" y="64" fill="#e5624c" font-family="IBM Plex Mono, monospace" font-size="13">not every page: w044 loses 0.10 at 38 µm</text>
+          <line x1="40" x2="1060" y1="96" y2="96" stroke="#8f96a0" stroke-opacity=".5"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="13" fill="#8f96a0" text-anchor="middle">
+            <line x1="40" x2="40" y1="90" y2="102" stroke="#8f96a0"/><text x="40" y="122">0</text>
+            <line x1="384" x2="384" y1="90" y2="102" stroke="#8f96a0"/><text x="384" y="122">40 µm</text>
+            <line x1="900" x2="900" y1="90" y2="102" stroke="#8f96a0"/><text x="900" y="122">100 µm</text>
+          </g>
+          <circle cx="900" cy="59" r="7" fill="#e5624c"/>
+          <text x="886" y="30" fill="#e5624c" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="end">transferred meshes (TAUIL, villa #1912): AUC 0.70, depth search 0.90</text>
+          <text x="40" y="146" fill="#8f96a0" font-family="IBM Plex Sans, sans-serif" font-size="13">how far the traced surface sits from the inked papyrus</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13: the register -->
+  <section class="layer scene reg" id="L-reg" aria-label="What we searched">
+    <div class="inner">
+      <div>
+        <div class="eyebrow">Survey register</div>
+        <h2>What we searched, and what each search rules out</h2>
+        <p class="dek">In September we searched three scrolls then listed for the First Letters prize (PHerc. 1203, 0800 and 1447) and accepted no writing. Every search was first run on known writing, this page of PHerc. 139, to show it could see letters at all. One of those nulls has since been overtaken: see the last entry.</p>
+        <ol class="idx" id="reg-idx"></ol>
+      </div>
+      <div class="regcards" id="reg-cards"></div>
+    </div>
+  </section>
+
+  <!-- 14: method -->
+  <section class="layer scene doc" id="L-method" aria-label="How it was done">
+    <div class="inner">
+      <div>
+        <div class="eyebrow">Method and reproduction</div>
+        <h2>How it was done</h2>
+        <dl class="dl">
+          <div><dt>Input</dt><dd>PHerc0139 w035: tifxyz mesh, 2.399 µm CT volume 20260102150214, the organizers’ 109-layer surface volume and their published prediction. Vesuvius Challenge open data, CC BY-NC 4.0.</dd></div>
+          <div><dt>Model</dt><dd><code>scrollprize/ink_canonical_2um</code> @075855bc, hash-checked weights-only load. The band was run on an RTX 4090 whose convolutions most likely used TensorFloat-32, PyTorch’s default there: strict FP32 on CPU or another GPU gives map values within 0.009 and label AUCs within 0.0002 of these maps.</dd></div>
+          <div><dt>Runner</dt><dd>Our canonical runner, one of several public ones: 256 px tiles, stride 128, Hann blend, window centred on the surface. Reproduces the published map at r = <span class="num" data-n="rep4"></span> over the band; all 8,332 input chunks byte-identical to the public files.</dd></div>
+          <div><dt>Labels</dt><dd>The organizers’ ink labels and supervision mask for w035 at 2.399 µm (published 21 September 2026), used only to score the runs and not shown. They cover the upper part of the band; about 30 mm² is scored (pixels at 9.6 µm, labelled ink against labelled papyrus). A 180° rotation of the labels scores <span class="num" data-n="nul"></span>, at chance. The other-pages test used the same kind of labels for w030, w039–w041 and w043–w045.</dd></div>
+          <div><dt>Sheet depth</dt><dd>Per output pixel, the depth of the brightest papyrus layer among the 109 (Gaussian prior about the surface, σ = 30 layers). CT only.</dd></div>
+          <div><dt>Preregistration</dt><dd>Window offsets, band, statistics and kill conditions fixed before any output. The tolerance prediction passed; the map-predicts-reading prediction did not (see “Why it matters”). The label scoring was preregistered too. Its first run stopped on a coverage gate set too high for the labelled area, and the rerun changed only that gate. Our own prediction that reading quality would fall about as fast as map agreement failed: it falls much more slowly.</dd></div>
+          <div><dt>Limits</dt><dd>One scroll. The map, the band and the window curve come from one segment; the tolerance was then checked on seven more labelled pages, first on 6 mm crops and then on four full labelled regions. Why w044 is steeper is undetermined: a tilted sheet, a depth-sensitive model and misplaced labels were tested and none is supported. The published map is itself a model output, so it favours the traced surface. The labels were probably among this model family’s training labels, so the AUC is not a held-out accuracy; differences below about 0.01 are not resolved on the w035 band, and below about 0.03–0.05 on the crops. The brightest-layer estimate can pick a neighbouring layer where sheets touch.</dd></div>
+          <div><dt>Prior work</dt><dd>Window centring: flummoxjr, kadenpool and AndreasHad04 (ScrollPrize/villa #1765, #1766, #1813). Sheet wander off the trace: the organizers’ Hecate model card and 2026 open-problems page. Transferred meshes and depth search: TAUIL Abd Elilah (#1912). The PHerc. 1447 location: the organizers’ team, as relayed by Bullo27’s first-letters survey.</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15: liberties and credits -->
+  <section class="layer scene doc" id="L-made" aria-label="What is measured and what is animation">
+    <div class="inner">
+      <div>
+        <div class="eyebrow">How the film was made</div>
+        <h2>What is measured, and what is animation</h2>
+        <dl class="dl">
+          <div><dt>Unrolling</dt><dd>The 3D sheet and the flat page are both the organizers’ mesh. The motion between them is an animation, not a physical unrolling.</dd></div>
+          <div><dt>Scroll cutaway</dt><dd>The exterior and the cut face come from the scroll’s own CT. Lighting, materials, the lift-off and the glow are presentation.</dd></div>
+          <div><dt>Reading window</dt><dd>Every map in “The window” is a separate model run at that offset, shown run by run and never blended. (The standalone film crossfades between neighbouring runs and slides the curve’s marker between them.)</dd></div>
+          <div><dt>Crumpled page</dt><dd>Height is the CT-measured sheet offset, exaggerated ×6 and smoothed over about 70 µm, as stated on screen.</dd></div>
+          <div><dt>Cross-sections</dt><dd>Depth is stretched for visibility, growing on screen from true scale; the stretch control shows the factor.</dd></div>
+          <div><dt>Never altered</dt><dd>No letters or ink were drawn, painted or enhanced. Every number on screen comes from the analysis. Call-outs are placed by hand.</dd></div>
+        </dl>
+        <div class="credits" id="made-credits">
+          <div class="never">Every scan and ink map here is computed from the data.</div>
+          <div><b style="color:var(--text)">Jack Gilman and Andrew Gilman.</b></div>
+          <div>Scroll data, meshes, surface volume, published prediction and ink labels: Vesuvius Challenge, CC BY-NC 4.0. Model weights: MIT.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <svg class="leads" id="leads" aria-hidden="true"></svg>
+  <div class="marks" id="marks" aria-hidden="true"></div>
+  <div class="liberty" id="liberty" aria-live="polite"></div>
+
+  <ol class="menu" id="menu" hidden></ol>
+  <div class="hud">
+    <button class="hud-play" id="hud-play" aria-pressed="false" aria-label="Play from here">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l12.5-7.5z"/><path class="i-pause" d="M6.5 4.5h4v15h-4zm7 0h4v15h-4z"/></svg>
+    </button>
+    <div class="hud-now"><span class="num" id="hud-n">01</span><span id="hud-ch">Title</span></div>
+    <div class="track" id="track"></div>
+    <button class="hud-menu" id="hud-menu" aria-expanded="false" aria-controls="menu">Chapters</button>
+  </div>
+</div>
+</main>
+
+<script src="assets/page.js"></script>
+<script src="film/beats.js"></script>
+<script src="assets/pages.js"></script>
+<script>
+(() => {
+"use strict";
+// ---------------------------------------------------------------------------------------------- data and helpers
+const META = window.PAGE_META, B = window.FILM_BEATS;
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const ease = (x) => x * x * (3 - 2 * x);
+const lerp = (a, b, t) => a + (b - a) * t;
+const ramp = (x, a, b) => clamp((x - a) / (b - a), 0, 1);
+const U = (t) => t.replace(/µm/g, '<span class="u">µm</span>');
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const narrow = () => matchMedia("(max-width: 760px)").matches;
+const um = META.um_per_px, lab = META.labels, SC = META.scores, COV = META.coverage, P2 = META.analysis.P2;
+const minus = (s) => s.replace("-", "−");
+const f2 = (x) => minus(x.toFixed(2)), pct = (x) => `${(100 * x).toFixed(1)}%`;
+const ARMS = META.arms.filter((a) => a !== "R0").map(Number).sort((a, b) => a - b);
+const N = {
+  auc0: lab.auc["0"], auc48lo: Math.min(lab.auc["-20"], lab.auc["20"]), auc48hi: Math.max(lab.auc["-20"], lab.auc["20"]),
+  auc55: lab.auc["-23"], r8: Math.min(SC["-8"].r_s8, SC["8"].r_s8), rep: SC["0"].r_s8, rR: SC.R0.r_s8, aucR: lab.auc_R0,
+  nul: lab.null_rot180, inWin: 1 - COV.outside, gt24: COV.gt24um, gt48: COV.gt48um, out: COV.outside, rho: P2.spearman_rho, blocks: P2.blocks,
+};
+const FMT = { inWin: pct, gt24: pct, gt48: pct, out: pct, rep4: () => N.rep.toFixed(4), blocks: String, rho: f2 };
+document.querySelectorAll("[data-n]").forEach((el) => { const k = el.dataset.n; el.textContent = (FMT[k] || f2)(N[k]); });
+const fmtK = (k) => (Math.abs(k) < 0.05 ? "0 µm" : `${k > 0 ? "+" : "−"}${Math.abs(k * um).toFixed(0)} µm`);
+const nearestArm = (k) => ARMS.reduce((b, a) => (Math.abs(a - k) < Math.abs(b - k) ? a : b), ARMS[0]);
+const load = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+
+const stage = $("#stage"), story = $("#story"), video = $("#sv"), frame = $("#frame");
+let SR = stage.getBoundingClientRect();
+const rel = (r) => ({ x: r.left - SR.left, y: r.top - SR.top, w: r.width, h: r.height });
+
+// ---------------------------------------------------------------------------------------------- the film chapters
+// The film's own scenes and call-outs (film/beats.js, from the film source), up to the end of the letter zoom; the
+// page adds two notes of its own. Scroll distance per second of film: a base rate, stretched where a call-out needs
+// reading time, so a flick of the wheel cannot skip a sentence.
+const FPS = B.fps, T0 = B.start_s || 0, FILM_END = 60;
+const filmCh = [], beats = [];
+{
+  let off = 0, n = 0;
+  const EXTRA = {
+    title: [{ from: 100, to: 210, kicker: "PHerc. 139 · traced sheet w035 · X-ray CT at 2.4 µm", box: [0.25, 0.655], w: 0.5, at: null,
+      text: "A virtually unwrapped Herculaneum page looks flat. The papyrus inside the scan is not. We measured how far the real sheet strays from its traced surface, and how far the ink model’s reading window can be off before it stops finding the letters." }],
+    unroll: [{ from: 110, to: 296, note: true, kicker: "How a page is made", box: [0.035, 0.56], w: 0.25, at: null,
+      text: "To read a rolled scroll without opening it, the papyrus sheet is first traced through the CT scan as a smooth surface. The scan is sampled along that surface and laid out flat. That flat image is the page." }],
+  };
+  for (const s of B.scenes) {
+    const t0 = off / FPS, t1 = (off + s.frames) / FPS;
+    off += s.frames;
+    if (t1 > FILM_END + 1e-6) break;
+    n++;
+    filmCh.push({ id: s.id, name: s.chapter, n, t0: Math.max(t0, T0), t1 });
+    [...(B.captions[s.id] || []), ...(EXTRA[s.id] || [])].forEach((c) =>
+      beats.push({ ...c, n, chapter: s.chapter, t0: t0 + c.from / FPS, t1: t0 + c.to / FPS }));
+  }
+}
+const BASE = 62, minPx = (b) => 230 + 11 * b.text.split(/\s+/).length;
+const knots = [];
+{
+  const cuts = [...new Set([T0, FILM_END, ...beats.flatMap((b) => [b.t0, b.t1])])].filter((t) => t >= T0 && t <= FILM_END).sort((a, b) => a - b);
+  knots.push([cuts[0], 0]);
+  for (let i = 1; i < cuts.length; i++) {
+    const a = cuts[i - 1], b = cuts[i], mid = (a + b) / 2;
+    let rate = BASE;
+    beats.forEach((bt) => { if (!bt.note && mid > bt.t0 && mid < bt.t1) rate = Math.max(rate, minPx(bt) / (bt.t1 - bt.t0)); });
+    knots.push([b, knots[i - 1][1] + (b - a) * rate]);
+  }
+}
+const lerpK = (x, xi, yi) => {
+  if (x <= knots[0][xi]) return knots[0][yi];
+  for (let i = 1; i < knots.length; i++) if (x <= knots[i][xi]) {
+    const a = knots[i - 1], b = knots[i];
+    return a[yi] + ((x - a[xi]) / (b[xi] - a[xi] || 1)) * (b[yi] - a[yi]);
+  }
+  return knots[knots.length - 1][yi];
+};
+const filmTimeAt = (px) => lerpK(px, 1, 0), filmPxAt = (t) => lerpK(t, 0, 1);
+const FILM_PX = knots[knots.length - 1][1];
+
+// ---------------------------------------------------------------------------------------------- live scenes
+// Each scene: its layer, scroll length, narration steps (p ranges within the scene), an optional pointer target per step,
+// the seconds it takes when played, and update(p) drawing it. Every value shown is a function of the scroll position.
+const state = { row: 40, userS: null };
+const sprite = load("assets/xs_sprite.jpg");
+const armImg = {};
+META.arms.forEach((a) => { armImg[a] = load(`assets/arm_${a}.jpg`); });
+const nRows = META.rows.length;
+
+function drawXS(cv, img, row, S, k, lineO, bandO) {
+  const c = cv.getContext("2d"), W = cv.width, H = cv.height;
+  c.fillStyle = "#050608"; c.fillRect(0, 0, W, H);
+  if (!img) return;
+  const h = 109 * (W / 4096) * S, top = (H - h) / 2, py = (p) => top + (p / 109) * h;
+  c.filter = "contrast(1.25) brightness(1.15)";
+  c.drawImage(img, 0, row * 109, 2048, 109, 0, top, W, h);
+  c.filter = "none";
+  if (bandO > 0) {
+    c.globalAlpha = bandO;
+    c.fillStyle = "rgba(99,207,224,.16)"; c.fillRect(0, py(23 + k), W, py(85 + k) - py(23 + k));
+    c.strokeStyle = "#63cfe0"; c.lineWidth = 3;
+    [23 + k, 85 + k].forEach((p) => { c.beginPath(); c.moveTo(0, py(p)); c.lineTo(W, py(p)); c.stroke(); });
+    c.globalAlpha = 1;
+  }
+  if (lineO > 0) {
+    c.globalAlpha = lineO; c.setLineDash([16, 12]); c.strokeStyle = "#63cfe0"; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(0, py(54)); c.lineTo(W, py(54)); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+  }
+  return py;
+}
+const canvasPt = (cv, x, y) => { const r = rel(cv.getBoundingClientRect()); return [r.x + (x / cv.width) * r.w, r.y + (y / cv.height) * r.h]; };
+const elPt = (el, fx = 0.5, fy = 0.5) => { const r = rel(el.getBoundingClientRect()); return [r.x + fx * r.w, r.y + fy * r.h]; };
+
+const SCENES = [];
+// ---- 07 the cut
+{
+  const strip = $("#cut-strip"), xs = $("#cut-xs"), ex = $("#cut-ex");
+  const rowPath = (p) => (p < 0.3 ? 40 : p < 0.6 ? lerp(40, 12, ease(ramp(p, 0.3, 0.6))) : lerp(12, 68, ease(ramp(p, 0.6, 0.95))));
+  let img0 = null, spr = null, last = "";
+  armImg["0"].then((i) => { img0 = i; last = ""; }); sprite.then((i) => { spr = i; last = ""; });
+  const sc = {
+    id: "cut", name: "The cut", el: $("#L-cut"), len: 2000, play: 20,
+    liberty: "Raw CT along the cut · depth stretched for visibility (control below)",
+    steps: [
+      { p: [0, 0.3], kicker: "The cut", html: "Slice the scan straight down through the page, along the cyan line, and stretch the depth so we can see it.",
+        at: () => canvasPt(xs, 1024, 272) },
+      { p: [0.3, 0.58], html: "The dashed line is where the page was traced: the “flat” page. The bright band is the real papyrus, rising above it and dipping below it.",
+        at: () => (sc.py ? canvasPt(xs, 1480, sc.py(54)) : null) },
+      { p: [0.58, 0.82], html: "The ink model reads a slab 62 layers thick, about 150 µm, around the trace. So it still sees the papyrus where the sheet wanders a little.",
+        at: () => (sc.py ? canvasPt(xs, 1780, sc.py(23)) : null) },
+      { p: [0.82, 1], kicker: "Try it", html: "Drag on the gold strip to move the cut, or change the depth stretch. Scrolling moves the cut too.", at: () => elPt(strip, 0.86, 0.5) },
+    ],
+    update(p) {
+      state.row = Math.round(rowPath(p));
+      const S = state.userS ?? lerp(1, 8, ease(ramp(p, 0.06, 0.24)));
+      const lineO = ramp(p, 0.28, 0.34), bandO = ramp(p, 0.56, 0.62);
+      const key = [state.row, S.toFixed(2), lineO.toFixed(2), bandO.toFixed(2), !!img0, !!spr].join();
+      if (key === last) return;
+      last = key;
+      const c = strip.getContext("2d");
+      if (img0) c.drawImage(img0, 0, 0, strip.width, strip.height);
+      const y = ((state.row + 0.5) / nRows) * strip.height;
+      c.strokeStyle = "#63cfe0"; c.lineWidth = 4; c.shadowColor = "#63cfe0"; c.shadowBlur = 16;
+      c.beginPath(); c.moveTo(0, y); c.lineTo(strip.width, y); c.stroke(); c.shadowBlur = 0;
+      sc.py = drawXS(xs, spr, state.row, S, 0, lineO, bandO);
+      $("#cut-xslbl").textContent = `CT cross-section along the cut · ${S < 1.05 ? "true scale" : `depth stretched ×${S.toFixed(S < 7.95 ? 1 : 0)}`}`;
+      $("#cut-k1").style.opacity = lineO; $("#cut-k2").style.opacity = bandO;
+      ex.value = S; $("#cut-exv").textContent = S < 1.05 ? "true" : `×${S.toFixed(1).replace(".0", "")}`;
+    },
+  };
+  ex.addEventListener("input", () => { state.userS = Number(ex.value); dirty(); });
+  const fromPointer = (e) => {
+    const r = strip.getBoundingClientRect();
+    scrubTo(sc, rowPath, clamp(Math.floor(((e.clientY - r.top) / r.height) * nRows), 0, nRows - 1), [0.3, 0.95]);
+  };
+  strip.addEventListener("pointerdown", (e) => { strip.setPointerCapture(e.pointerId); fromPointer(e); });
+  strip.addEventListener("pointermove", (e) => { if (e.buttons && strip.hasPointerCapture(e.pointerId)) fromPointer(e); });
+  SCENES.push(sc);
+}
+// ---- 08 the reading window
+{
+  const strip = $("#sl-strip"), xs = $("#sl-xs"), rng = $("#sl-range"), svg = $("#sl-curve");
+  const kPath = (p) => (p < 0.1 ? 0 : p < 0.38 ? lerp(0, -23, ease(ramp(p, 0.1, 0.38))) : p < 0.8 ? lerp(-23, 23, ease(ramp(p, 0.38, 0.8)))
+    : lerp(23, 0, ease(ramp(p, 0.8, 0.92))));
+  rng.max = String(ARMS.length - 1);
+  const imgs = {};
+  let spr = null, last = "";
+  ARMS.forEach((a) => armImg[String(a)].then((i) => { imgs[a] = i; last = ""; }));
+  sprite.then((i) => { spr = i; last = ""; });
+  // the curve: every point a separate run; gold = agreement with the published map, cyan = AUC against the labels
+  const W = 440, H = 330, L = 40, R = 10, T = 54, Bm = 50;
+  const x = (k) => L + ((k * um + 60) / 120) * (W - L - R), y = (v) => T + (1 - Math.max(-0.2, v)) / 1.2 * (H - T - Bm);
+  const tx = (xx, yy, t, anchor = "middle", col = "#8f96a0", size = 14) =>
+    `<text x="${xx}" y="${yy}" fill="${col}" font-family="IBM Plex Mono, monospace" font-size="${size}" text-anchor="${anchor}">${t}</text>`;
+  let s = tx(0, 16, "● agreement with the published map (r)", "start", "#f0b45c", 14) + tx(0, 36, "■ labelled letters vs papyrus (AUC)", "start", "#63cfe0", 14);
+  s += `<rect x="${x(-8)}" y="${T}" width="${x(8) - x(-8)}" height="${H - T - Bm}" fill="rgba(240,180,92,.07)"/>`;
+  s += tx((x(-8) + x(8)) / 2, H - Bm - 8, "±20 µm", "middle", "#f0b45c", 13);
+  [0, 0.5, 1].forEach((v) => { s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? "#2b333d" : "#1b2129"}"/>` + tx(L - 10, y(v) + 4, v, "end"); });
+  [-55, -20, 0, 20, 55].forEach((u) => { s += tx(L + ((u + 60) / 120) * (W - L - R), H - Bm + 20, `${u > 0 ? "+" : ""}${u}`); });
+  s += `<text x="${(W + L - R) / 2}" y="${H - 6}" fill="#8f96a0" font-family="IBM Plex Sans, sans-serif" font-size="14" text-anchor="middle">window offset from the traced surface (µm)</text>`;
+  const rp = ARMS.map((k) => [x(k), y(SC[String(k)].r_s8)]), ap = ARMS.map((k) => [x(k), y(lab.auc[String(k)])]);
+  s += `<polyline points="${rp.map((q) => q.join(",")).join(" ")}" fill="none" stroke="#f0b45c" stroke-width="2.5" stroke-linejoin="round" opacity=".85"/>`;
+  s += `<polyline points="${ap.map((q) => q.join(",")).join(" ")}" fill="none" stroke="#63cfe0" stroke-width="2.5" stroke-linejoin="round" opacity=".85"/>`;
+  rp.forEach(([a, b]) => { s += `<circle cx="${a}" cy="${b}" r="3" fill="#f0b45c"/>`; });
+  ap.forEach(([a, b]) => { s += `<rect x="${a - 2.5}" y="${b - 2.5}" width="5" height="5" fill="#63cfe0"/>`; });
+  s += `<circle cx="${x(0)}" cy="${y(N.rR)}" r="5" fill="#e5624c"/>` + tx(x(0) + 10, y(N.rR) + 5, "reversed", "start", "#e5624c", 13);
+  s += `<line id="sl-vl" x1="0" x2="0" y1="${T}" y2="${H - Bm}" stroke="#ebe5d9" stroke-opacity=".25" stroke-dasharray="3 4"/>`;
+  s += `<circle id="sl-mr" r="7" fill="#f0b45c" stroke="#08090c" stroke-width="2"/><rect id="sl-ma" width="12" height="12" fill="#63cfe0" stroke="#08090c" stroke-width="2"/>`;
+  svg.innerHTML = s;
+  const mr = $("#sl-mr"), ma = $("#sl-ma"), vl = $("#sl-vl");
+  const sc = {
+    id: "slab", name: "The window", el: $("#L-slab"), len: 3000, play: 34,
+    liberty: "Each map is a separate model run · shown run by run, never blended",
+    steps: [
+      { p: [0, 0.12], kicker: "The window", html: "We moved the model’s 62-layer reading window off the traced surface, a few micrometres at a time, and reran the whole band each time: the organizers’ <code>ink_canonical_2um</code> model, unchanged, on their own surface volume.",
+        at: () => (sc.py ? canvasPt(xs, 1700, sc.py(23 + sc.k)) : null) },
+      { p: [0.12, 0.4], kicker: "Does the map change?", html: `Yes, steadily. Within ±20 µm it matches the organizers’ published map (r ≥ ${N.r8.toFixed(2)}); at ±38 µm about 0.7; at ±55 µm about 0.5.`,
+        at: () => elPt(mr) },
+      { p: [0.4, 0.66], kicker: "Does the model stop finding the letters?", html: `Much later. Where the organizers labelled the ink, the model separates labelled letters from papyrus with AUC ${N.auc0.toFixed(2)} on the trace, and still ${N.auc48lo.toFixed(2)}–${N.auc48hi.toFixed(2)} at ±48 µm. Only at −55 µm, the edge of what we tested, does it drop to ${N.auc55.toFixed(2)}. The letters lose about a quarter of their contrast by then; they do not disappear.`,
+        at: () => elPt(ma) },
+      { p: [0.66, 0.86], kicker: "On this region", html: "<span class=\"big\">±50 µm</span>Here the reading window can move up to about 50 µm either way and the model still picks out the labelled letters nearly as well as on the trace. The map’s finer detail changes sooner, within about ±20 µm. This is one labelled region of one page; the next chapter tests others." },
+      { p: [0.86, 1], kicker: "Already known", html: "In September flummoxjr, kadenpool and AndreasHad04 showed that the window has to sit on the sheet: the organizers’ suggested window for this model misses much of the ink on these 109-layer volumes, and a centred window reproduces the published maps (ScrollPrize/villa #1765, #1766, #1813). Models of this family are also trained with the window jittered, by up to about 14 µm in the organizers’ archived training code. What is added here is the whole curve: how far the window can move, on a band of text, scored against labels, with the predictions written down before the runs." },
+    ],
+    update(p) {
+      const k = nearestArm(kPath(p)), S = state.userS ?? 8;
+      sc.k = k;
+      const key = [k, state.row, S, Object.keys(imgs).length, !!spr].join();
+      if (key === last) return;
+      last = key;
+      if (imgs[k]) strip.getContext("2d").drawImage(imgs[k], 0, 0, strip.width, strip.height);
+      sc.py = drawXS(xs, spr, state.row, S, k, 0.6, 1);
+      $("#sl-xslbl").textContent = `CT along the cut · depth ×${String(S).replace(".0", "")}`;
+      const r = SC[String(k)].r_s8, a = lab.auc[String(k)];
+      $("#sl-k").textContent = fmtK(k); $("#sl-rv").textContent = fmtK(k);
+      $("#sl-r").textContent = r.toFixed(2); $("#sl-a").textContent = a.toFixed(2);
+      mr.setAttribute("cx", x(k)); mr.setAttribute("cy", y(r));
+      ma.setAttribute("x", x(k) - 6); ma.setAttribute("y", y(a) - 6);
+      vl.setAttribute("x1", x(k)); vl.setAttribute("x2", x(k));
+      rng.value = String(ARMS.indexOf(k));
+    },
+  };
+  rng.addEventListener("input", () => scrubTo(sc, (p) => nearestArm(kPath(p)), ARMS[Number(rng.value)], [0.1, 0.92]));
+  SCENES.push(sc);
+}
+// ---- 09 other pages: does the window tolerance found on w035's labelled region hold elsewhere on the scroll?
+// Label AUC per window offset on four full labelled regions and on 6 mm crops of eight (assets/pages.js, copied from
+// the two analyses by story_assets.py). Plotted as AUC lost against the on-trace score.
+const PG = window.PAGES_META;
+const PGN = {
+  cropsIn: Object.values(PG.crops).filter((c) => Math.max(...c.drop38) <= 0.05).length, crops: Object.keys(PG.crops).length,
+  fullIn: Object.values(PG.full).filter((c) => c.call === "WITHIN").length, full: Object.keys(PG.full).length,
+  w44: PG.full.w044, w44crop: PG.crops.w044.drop38[0], w35p55: PG.crops.w035.auc["0"] - PG.crops.w035.auc["23"],
+};
+{
+  const svg = $("#pg-chart"), read = $("#pg-read"), legend = $("#pg-legend");
+  const W = 640, H = 372, L = 50, R = 12, T = 12, Bm = 50, Y0 = -0.06, Y1 = 0.4;
+  const x = (u) => L + ((u + 58) / 116) * (W - L - R), y = (v) => T + ((Y1 - clamp(v, Y0, Y1)) / (Y1 - Y0)) * (H - T - Bm);
+  const curve = (auc) => Object.keys(auc).map(Number).sort((a, b) => a - b).map((k) => [k * um, auc["0"] - auc[String(k)]]);
+  const COL = { w030: "#c9c3b7", w035: "#63cfe0", w039: "#f0b45c", w044: "#e5624c" };
+  const tx = (xx, yy, t, anchor = "middle", col = "#8f96a0", size = 13) =>
+    `<text x="${xx}" y="${yy}" fill="${col}" font-family="IBM Plex Mono, monospace" font-size="${size}" text-anchor="${anchor}">${t}</text>`;
+  let g = `<rect x="${L}" y="${y(0.05)}" width="${W - L - R}" height="${y(0) - y(0.05)}" fill="rgba(99,207,224,.10)"/>`;
+  [0, 0.1, 0.2, 0.3, 0.4].forEach((v) => { g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? "#2b333d" : "#1b2129"}"/>` + tx(L - 8, y(v) + 4, v.toFixed(1), "end"); });
+  g += tx(W - R - 2, y(0.025) + 4, "< 0.05", "end", "#63cfe0", 12);
+  g += `<g id="pg-g38">${[-38.4, 38.4].map((u) => `<line x1="${x(u)}" x2="${x(u)}" y1="${T}" y2="${H - Bm}" stroke="#ebe5d9" stroke-dasharray="3 4"/>`).join("")}${tx(x(38.4), T + 12, "±38 µm", "start", "#ebe5d9", 12).replace(`x="${x(38.4)}"`, `x="${x(38.4) + 5}"`)}</g>`;
+  g += `<g id="pg-g55">${[-55.2, 55.2].map((u) => `<line x1="${x(u)}" x2="${x(u)}" y1="${T}" y2="${H - Bm}" stroke="#e5624c" stroke-dasharray="3 4"/>`).join("")}</g>`;
+  [-55, -38, -20, 0, 20, 38, 55].forEach((u) => { g += tx(x(u), H - Bm + 20, `${u > 0 ? "+" : ""}${u}`); });
+  g += `<text x="${(W + L - R) / 2}" y="${H - 6}" fill="#8f96a0" font-family="IBM Plex Sans, sans-serif" font-size="14" text-anchor="middle">window offset from the traced surface (µm)</text>`;
+  const pts = (c) => c.map(([u, v]) => `${x(u).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  Object.entries(PG.crops).forEach(([k, c]) => {
+    g += `<polyline class="pg-crop" data-k="${k}" points="${pts(curve(c.auc))}" fill="none" stroke="${k === "w044" ? "#e5624c" : "#8f96a0"}" stroke-width="1.2" pathLength="1" stroke-dasharray="1"/>`;
+  });
+  Object.entries(PG.full).forEach(([k, c]) => {
+    g += `<polyline class="pg-full" data-k="${k}" points="${pts(curve(c.auc))}" fill="none" stroke="${COL[k]}" stroke-width="2.6" stroke-linejoin="round" pathLength="1" stroke-dasharray="1"/>`;
+  });
+  g += `<line id="pg-cur" y1="${T}" y2="${H - Bm}" stroke="#ebe5d9" stroke-opacity="0"/>`;
+  // pointer targets
+  g += `<circle id="pg-t38" cx="${x(38.4)}" cy="${y(0.05)}" r="1" fill="none"/>`;
+  g += `<circle id="pg-t44" cx="${x(-38.4)}" cy="${y(PGN.w44.drop38[0])}" r="1" fill="none"/>`;
+  g += `<circle id="pg-t55" cx="${x(55.2)}" cy="${y(PGN.w35p55)}" r="1" fill="none"/>`;
+  svg.innerHTML = g;
+  legend.innerHTML = Object.keys(PG.full).sort().map((k) => `<span><span class="sw" style="background:${COL[k]}"></span>${k}</span>`).join("")
+    + `<span><span class="sw" style="background:#8f96a0;height:2px;vertical-align:3px"></span>6 mm crops</span>`;
+  const crops = [...svg.querySelectorAll(".pg-crop")], fulls = [...svg.querySelectorAll(".pg-full")];
+  const g38 = $("#pg-g38"), g55 = $("#pg-g55"), cur = $("#pg-cur");
+  const sc = {
+    id: "pages", name: "Other pages", el: $("#L-pages"), len: 2600, play: 34,
+    liberty: "Labels are probably among this model’s training labels: these are not held-out accuracies",
+    steps: [
+      { p: [0, 0.25], kicker: "Other pages", html: "That curve comes from one labelled region of one page. The organizers have labelled seven more pages of this scroll, so we ran the same window offsets on a 6 mm crop of each (thin lines), then on the full labelled regions of four pages (thick lines). Each line shows how much AUC the model loses as its window moves off the trace." },
+      { p: [0.25, 0.5], kicker: "Usually about ±40 µm", html: `On ${PGN.cropsIn} of ${PGN.crops} crops the model stays within 0.05 AUC of its on-trace score at ±38 µm, and so do ${PGN.fullIn} of the ${PGN.full} full regions.`,
+        at: () => elPt($("#pg-t38")) },
+      { p: [0.5, 0.75], kicker: "Not every page", warn: true, html: `w044 is the exception. Over its full labelled region it loses ${PGN.w44.drop38[0].toFixed(3)} AUC at −38 µm (95% interval ${PGN.w44.ci_minus[0].toFixed(3)}–${PGN.w44.ci_minus[1].toFixed(3)}); its 6 mm crop lost ${PGN.w44crop.toFixed(2)}. We tested three explanations: a tilted sheet, a model that is sensitive to depth everywhere, and misplaced labels. None is supported, so the cause is undetermined.`,
+        at: () => elPt($("#pg-t44")) },
+      { p: [0.75, 1], kicker: "Not to ±55 µm", html: `No crop held to ±55 µm: every one lost more than 0.05 on one side, and which side varies by page. A second region of w035 itself lost ${PGN.w35p55.toFixed(2)} at +55 µm. The ±50 µm tolerance in the last chapter belongs to that one labelled region.`,
+        at: () => elPt($("#pg-t55")) },
+    ],
+    update(p) {
+      const dc = ease(ramp(p, 0.02, 0.2)), df = ease(ramp(p, 0.26, 0.42));
+      const f44 = ramp(p, 0.5, 0.54) * (1 - ramp(p, 0.74, 0.78)), f55 = ramp(p, 0.76, 0.8);
+      crops.forEach((c) => { c.style.strokeDashoffset = 1 - dc; c.style.opacity = c.dataset.k === "w044" ? 0.4 + 0.5 * f44 : (0.35 + 0.4 * f55) * (1 - 0.6 * f44); });
+      fulls.forEach((c) => {
+        const me = c.dataset.k === "w044";
+        c.style.strokeDashoffset = 1 - df; c.style.opacity = me ? 1 : 1 - 0.75 * f44;
+        c.setAttribute("stroke-width", me ? 2.6 + 1.4 * f44 : 2.6);
+      });
+      g38.style.opacity = 0.25 + 0.75 * ramp(p, 0.26, 0.3) * (1 - ramp(p, 0.72, 0.76));
+      g55.style.opacity = 0.15 + 0.85 * f55;
+    },
+  };
+  const ARM_FULL = Object.keys(PG.full.w044.auc).map(Number).sort((a, b) => a - b);
+  svg.addEventListener("pointermove", (e) => {
+    const r = svg.getBoundingClientRect(), u = ((((e.clientX - r.left) / r.width) * W - L) / (W - L - R)) * 116 - 58;
+    const k = ARM_FULL.reduce((b, a) => (Math.abs(a * um - u) < Math.abs(b * um - u) ? a : b), ARM_FULL[0]);
+    cur.setAttribute("x1", x(k * um)); cur.setAttribute("x2", x(k * um)); cur.setAttribute("stroke-opacity", ".5");
+    read.innerHTML = `at <b>${fmtK(k)}</b>, AUC lost: ` + Object.keys(PG.full).sort().map((p) =>
+      `<span style="color:${COL[p]}">${p} <b>${minus((PG.full[p].auc["0"] - PG.full[p].auc[String(k)]).toFixed(3))}</b></span>`).join(" · ");
+  });
+  svg.addEventListener("pointerleave", () => { cur.setAttribute("stroke-opacity", "0"); });
+  SCENES.push(sc);
+}
+$("#tk-crops").textContent = `${PGN.cropsIn} of ${PGN.crops}`;
+$("#tk-full").textContent = `${PGN.fullIn} of ${PGN.full}`;
+// ---- 10 flip
+{
+  const card = $("#fl-card");
+  $("#fl-f").textContent = `r ${N.rep.toFixed(2)} · AUC ${N.auc0.toFixed(2)}`;
+  $("#fl-r").textContent = `r ${f2(N.rR)} · AUC ${N.aucR.toFixed(2)}`;
+  const angle = (p) => 180 * ease(ramp(p, 0.32, 0.52));
+  const sc = {
+    id: "flip", name: "Flip it", el: $("#L-flip"), len: 1500, play: 14,
+    liberty: "Both maps are real model runs on the same 62 layers",
+    steps: [
+      { p: [0, 0.36], kicker: "Control", html: "Now feed the model the same 62 layers back to front.", at: () => elPt(card, 0.5, 0.5) },
+      { p: [0.44, 1], kicker: "Control", warn: true, html: `The lines of writing go. What is left is speckle that follows no rows (r = ${f2(N.rR)}; AUC ${N.aucR.toFixed(2)}, at chance). What the model finds depends on which face comes first: it is reading the writing surface, not a texture that looks the same from either side.`,
+        at: () => elPt(card, 0.62, 0.45) },
+    ],
+    update(p) {
+      const a = angle(p);
+      card.style.transform = `rotateX(${a}deg)`;
+      $("#fl-lbl").textContent = a < 90 ? "Front of the sheet first (as trained)" : "Same layers, back to front";
+      $("#fl-btn").textContent = a < 90 ? "Flip the layers" : "Flip back";
+    },
+  };
+  $("#fl-btn").addEventListener("click", () => jumpTo(sc.start + (angle(sc.p || 0) < 90 ? 0.7 : 0.16) * sc.len, true));
+  SCENES.push(sc);
+}
+// ---- 10 the whole band: the CT-only sheet offset, one data image (story_assets.py), four renderings crossfaded by scroll
+{
+  const cv = $("#cv-map"), tip = $("#cv-tip"), ctx = cv.getContext("2d");
+  let data = null, views = null, last = "";
+  load("assets/depth_data.png").then((img) => {
+    if (!img) return;
+    const t = document.createElement("canvas"); t.width = img.width; t.height = img.height;
+    const tc = t.getContext("2d"); tc.drawImage(img, 0, 0);
+    data = tc.getImageData(0, 0, t.width, t.height).data;
+    const dark = [18, 22, 30], blue = [42, 99, 201], orange = [235, 140, 50], cyan = [99, 207, 224];
+    views = [0, 2, 3, 4].map((minClass, v) => {
+      const out = new ImageData(t.width, t.height), o = out.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const R = data[i], G = data[i + 1];
+        if (!R) { o[i] = 5; o[i + 1] = 6; o[i + 2] = 8; o[i + 3] = 255; continue; }
+        const d = (R - 128) / 2, tt = clamp(d / 20, -1, 1), m = Math.pow(Math.abs(tt), 0.85), c = tt < 0 ? blue : orange;
+        let r = lerp(dark[0], c[0], m), g = lerp(dark[1], c[1], m), b = lerp(dark[2], c[2], m);
+        if (v > 0) {
+          if (G >= minClass) { r = cyan[0]; g = cyan[1]; b = cyan[2]; }
+          else { const y = 0.3 * r + 0.59 * g + 0.11 * b; r = g = b = y * 0.33; }
+        }
+        o[i] = r; o[i + 1] = g; o[i + 2] = b; o[i + 3] = 255;
+      }
+      const c = document.createElement("canvas"); c.width = t.width; c.height = t.height; c.getContext("2d").putImageData(out, 0, 0);
+      return c;
+    });
+    last = ""; dirty();
+  });
+  const tiles = [["#cv-t1", N.gt24], ["#cv-t2", N.gt48], ["#cv-t3", N.out]].map(([s, v]) => [$(s), v]);
+  const sc = {
+    id: "cov", name: "The whole band", el: $("#L-cov"), len: 2400, play: 26,
+    liberty: "CT only, no ink model · colours smoothed ~0.1 mm",
+    steps: [
+      { p: [0, 0.28], kicker: "The whole band", html: "The cut showed one line. This map measures, at every point of a strip 17 × 49 mm, how far the papyrus sits from the trace. It uses the CT alone, no ink model. <em>Point at the map to read the offset.</em>",
+        at: () => elPt(cv, 0.62, 0.42) },
+      { p: [0.28, 0.52], html: `A third of the page, <b>${pct(N.gt24)}</b>, sits more than 24 µm off its trace.`, at: () => elPt(tiles[0][0].firstElementChild, 1, 0.5) },
+      { p: [0.52, 0.74], html: `<b>${pct(N.gt48)}</b> sits more than 48 µm off.`, at: () => elPt(tiles[1][0].firstElementChild, 1, 0.5) },
+      { p: [0.74, 1], html: `Yet the model’s 150 µm slab still holds the papyrus on <b>${pct(N.inWin)}</b> of the band. Only ${pct(N.out)} falls outside the layers it reads.`,
+        at: () => elPt(tiles[2][0].firstElementChild, 1, 0.5) },
+    ],
+    update(p) {
+      const lv = ramp(p, 0.25, 0.31) + ramp(p, 0.49, 0.55) + ramp(p, 0.71, 0.77);
+      tiles.forEach(([el, v], j) => {
+        const u = clamp(lv - j, 0, 1);
+        el.classList.toggle("on", u > 0.5);
+        el.firstElementChild.textContent = u > 0 ? pct(v * ease(u)) : "–";
+      });
+      $("#cv-hil").style.opacity = Math.min(1, lv);
+      const key = lv.toFixed(3) + !!views;
+      if (key === last || !views) return;
+      last = key;
+      const i = Math.min(2, Math.floor(lv)), f = lv - i;
+      ctx.globalAlpha = 1; ctx.drawImage(views[i], 0, 0);
+      if (f > 0) { ctx.globalAlpha = f; ctx.drawImage(views[i + 1], 0, 0); ctx.globalAlpha = 1; }
+    },
+  };
+  cv.addEventListener("pointermove", (e) => {
+    if (!data) return;
+    const r = cv.getBoundingClientRect(), px = Math.floor(((e.clientX - r.left) / r.width) * cv.width), py = Math.floor(((e.clientY - r.top) / r.height) * cv.height);
+    const R = data[(py * cv.width + px) * 4], G = data[(py * cv.width + px) * 4 + 1];
+    if (!R || px < 0 || py < 0 || px >= cv.width || py >= cv.height) { tip.style.opacity = 0; return; }
+    const d = ((R - 128) / 2) * um;
+    tip.innerHTML = Math.abs(d) < 3 ? "papyrus <b>on the trace</b>" : `papyrus <b>${Math.abs(d).toFixed(0)} µm ${d < 0 ? "above" : "below"}</b> the trace`;
+    tip.innerHTML += ` <span style="opacity:.7">(smoothed)</span>`;
+    if (G) tip.innerHTML += `<br>unsmoothed: ${["", "within 24 µm", "24–48 µm off", "more than 48 µm off", "outside the model’s layers"][G]}`;
+    tip.innerHTML += `<br>${(px * 0.0288).toFixed(1)} mm along · ${(py * 0.0288).toFixed(1)} mm down`;
+    tip.style.left = `${e.clientX - r.left}px`; tip.style.top = `${e.clientY - r.top}px`; tip.style.opacity = 1;
+    tip.style.transform = e.clientX - r.left > r.width * 0.7 ? "translate(calc(-100% - 14px), -50%)" : "translate(14px, -50%)";
+  });
+  cv.addEventListener("pointerleave", () => { tip.style.opacity = 0; });
+  SCENES.push(sc);
+}
+// ---- 11 the takeaway
+{
+  const figs = [...document.querySelectorAll("#L-take .fig")], closing = $("#L-take .closing");
+  SCENES.push({
+    id: "take", name: "±40 µm", el: $("#L-take"), len: 1500, play: 14, steps: [],
+    update(p) {
+      figs.forEach((f, i) => { const u = ease(ramp(p, 0.12 + i * 0.16, 0.22 + i * 0.16)); f.style.opacity = u; f.style.transform = `translateY(${(1 - u) * 12}px)`; });
+      closing.style.opacity = ease(ramp(p, 0.68, 0.8));
+    },
+  });
+}
+// ---- 12 why it matters
+{
+  const bg = $("#why-bg"), rule = $("#why-rule");
+  SCENES.push({
+    id: "why", name: "Why it matters", el: $("#L-why"), len: 2800, play: 48,
+    steps: [
+      { p: [0, 0.26], html: "The organizers ask for a way to <em>“reliably tell ‘no ink’ apart from ‘no ink recovered yet’”</em> (Open Problems, 2026). Archaeologists know the problem from an empty trench: a survey that finds nothing only counts where it could have seen something. When a model finds no ink on a traced sheet, one suspect is always the trace itself." },
+      { p: [0.26, 0.5], kicker: "On this page", html: `That suspect can be set aside. The papyrus wanders, but the model’s slab still holds it on <b>${pct(N.inWin)}</b> of the band, and on most pages tested the model keeps finding the labelled letters with its window about 40 µm off. On a page traced this well, missing ink would almost always have another cause.` },
+      { p: [0.5, 0.76], kicker: "Elsewhere", html: "On meshes carried over from another scan of the same scroll, TAUIL Abd Elilah found traces up to about 100 µm off the inked surface. There the same model lost much of the ink (AUC 0.70 on one segment), and searching in depth brought it back (0.90) (ScrollPrize/villa issue #1912; the author’s own result, not rerun here). Put next to our curves, that gives a working rule: within about 40 µm of the sheet the trace is usually not why ink goes missing (w044 is an exception); at 100 µm it can be." },
+      { p: [0.76, 1], kicker: "A prediction that failed", warn: true, html: `We also predicted, before running it, that the depth where the model reads best would follow the sheet from one millimetre to the next. It does not (Spearman ρ = ${f2(N.rho)} across ${N.blocks} one-millimetre blocks). Together with the wide tolerance, that fits a model that reads the whole slab rather than one surface, so re-tracing an already good mesh more tightly is unlikely to sharpen what it sees. The organizers list “label snapping” as an open direction. On this page a few tens of micrometres of snapping would change little, and a separate test on seven more pages found no evidence that snapping the trace onto the papyrus with the CT raises the model’s score (effects under about 0.03 are not resolved).` },
+    ],
+    update(p) {
+      if (!reduce) bg.style.transform = `scale(${lerp(1.12, 1, p)})`;
+      rule.style.opacity = ease(ramp(p, 0.5, 0.56));
+    },
+  });
+}
+// ---- 13 the register
+{
+  const R = [
+    ["Bright-deposit screen · 40 segment renders", "thumb_bright.jpg", "A ring planted on real CT at +1, +2, +3, +4σ: the test’s detection limit", "finds 56 of 60 planted letters at 3σ",
+      "No flag (10 small bright specks in all, none in rows).", "letter-sized X-ray-dense ink, such as metal-bearing ink", "carbon ink, not bright even on known writing"],
+    ["Depth order reversed · PHerc. 0800 and 1447", "thumb_reverse.jpg", "PHerc. 1447 surface: front first | back to front", "known writing drops from r 0.70 to −0.01",
+      "No writing appears in the reversed order (blind review).", "writing missed because renders faced the wrong way", "writing too faint for the model"],
+    ["Every public traced surface of PHerc. 1203 · 22 surfaces, both orders", "thumb_1203.jpg", "One PHerc. 1203 surface: CT | front first | back to front", "text-like rule passes 12 of 12 windows; shuffle control 0 of 12",
+      "334 text-like windows, but no depth-order preference (12 of 21 surfaces, p 0.33; known writing +0.70).", "widespread writing of the kind seen on known text", "sparse writing"],
+    ["Two independent model families · 21 renders", null, null, "89% of consensus pixels land on known ink (25% by chance)",
+      "12 of 21 renders above a structure-free null, all below known writing’s density.", "dense writing", "faint or sparse writing"],
+    ["Canonical 2.4 µm model · fine-scan patches of PHerc. 1203", "thumb_patch.jpg", "Known writing (PHerc. 139) | PHerc. 1203 patch W, front first | back to front", "reproduces the published map at r 0.9998",
+      "Non-specific response; no lead.", "a strong lead at the patches examined", "writing elsewhere on the scroll"],
+    ["Self-training on PHerc. 1203 · the model’s own top 10%", "thumb_self.jpg", "The model’s top 10% (red), used as training labels", "known-writing retention kept (0.389 vs 0.335 base)",
+      "No gain over a shuffled-label control (13 of 21, p 0.19).", "a quick bootstrap route to its ink", "bootstrapping from better seeds"],
+    ["PHerc. 1447 · the place where text was later found", null, null, "the reported spot lies within 0.1 mm of a sheet we screened, inside both September screens of it",
+      "On 24 September the organizers took PHerc. 1447 off the First Letters list after their team reported text on it. The location, as relayed by a community survey (we have not read the announcement itself), sits on one of the surfaces we screened. Our reviews there saw isolated curved marks 2.6 to 4.4 mm away and did not call them ink. This null was “no ink recovered yet”.",
+      "an unsearched surface: this one was searched", "letters our review could not tell from papyrus structure"],
+  ];
+  const idx = $("#reg-idx"), cards = $("#reg-cards"), n = R.length, span = 0.9 / n;
+  const btns = R.map(([t], i) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.innerHTML = `<span class="num">${String(i + 1).padStart(2, "0")}</span><span>${t.split(" · ")[0]}</span>`;
+    li.append(b); idx.append(li);
+    return b;
+  });
+  const els = R.map(([t, img, cap, calib, res, out, open], i) => {
+    const c = document.createElement("article"); c.className = "card";
+    c.innerHTML = `<div class="k"><b>${String(i + 1).padStart(2, "0")}</b>Search ${i + 1} of ${n}</div><h3>${t}</h3>`
+      + (img ? `<figure><img src="assets/${img}" alt="${cap}" loading="lazy"><figcaption>${cap}</figcaption></figure>` : "")
+      + `<div class="two"><div><div class="h">Shown on known writing</div>${calib}</div><div><div class="h">Result</div>${res}</div></div>`
+      + `<div class="chips"><span class="chip out">${out}</span><span class="chip open">${open}</span></div>`;
+    cards.append(c);
+    return c;
+  });
+  const outro = document.createElement("article"); outro.className = "card";
+  outro.innerHTML = `<div class="k">The missing columns</div><p>The measurements on this page add a missing column to a register like this: whether the papyrus sat inside the model’s window where it looked.</p><p>The PHerc. 1447 entry shows why a second column is needed too: whether a search that did look in the right place could have recognized what it saw. Applying both to the PHerc. 1203 surfaces is the next step.</p>`;
+  cards.append(outro);
+  const sc = {
+    id: "reg", name: "What we searched", el: $("#L-reg"), len: 3400, play: 56, steps: [],
+    update(p) {
+      const fw = 40 / this.len;
+      els.forEach((c, i) => {
+        const o = ease(Math.min(i === 0 ? 1 : ramp(p, i * span - fw, i * span + fw), 1 - ramp(p, (i + 1) * span - fw, (i + 1) * span + fw)));
+        c.style.opacity = o; c.style.transform = `translateY(${(1 - o) * 10}px)`; c.style.visibility = o > 0.01 ? "visible" : "hidden";
+        btns[i].classList.toggle("on", o > 0.5);
+      });
+      const o = ease(ramp(p, 0.9 - fw, 0.9 + fw));
+      outro.style.opacity = o; outro.style.visibility = o > 0.01 ? "visible" : "hidden";
+    },
+  };
+  btns.forEach((b, i) => b.addEventListener("click", () => jumpTo(sc.start + (i + 0.5) * span * sc.len)));
+  SCENES.push(sc);
+}
+// ---- 14, 15 method; liberties and credits
+for (const [id, name, len, play] of [["method", "How it was done", 1900, 40], ["made", "What is animation", 1700, 30]]) {
+  const el = $(`#L-${id}`), items = [...el.querySelectorAll(".dl > div")], cred = el.querySelector(".credits");
+  SCENES.push({
+    id, name, el, len, play, steps: [],
+    update(p) {
+      items.forEach((d, i) => { const u = ease(ramp(p, 0.02 + i * 0.07, 0.1 + i * 0.07)); d.style.opacity = u; d.style.transform = `translateY(${(1 - u) * 10}px)`; });
+      if (cred) cred.style.opacity = ease(ramp(p, 0.55, 0.65));
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------------------------- chapters, layout
+const CH = [];
+filmCh.forEach((c) => CH.push({ ...c, kind: "film", start: filmPxAt(c.t0), len: filmPxAt(c.t1) - filmPxAt(c.t0) }));
+let acc = FILM_PX;
+SCENES.forEach((s, i) => { s.start = acc; s.n = filmCh.length + i + 1; acc += s.len; CH.push({ ...s, kind: "scene", scene: s }); });
+const TOTAL = acc, FADE = 220;
+let top = 0;
+function layout() {
+  SR = stage.getBoundingClientRect();
+  story.style.height = `${TOTAL + stage.offsetHeight}px`;
+  top = story.getBoundingClientRect().top + scrollY;
+  $("#leads").setAttribute("viewBox", `0 0 ${SR.width} ${SR.height}`);
+  lastPos = -1;
+}
+
+// narration cards for the scenes; on phones the visual drifts inside its own box while the narration stays put
+SCENES.forEach((s) => {
+  const inner = s.el.querySelector(".inner"), vis = inner.querySelector(":scope > .vis");
+  if (vis && inner.querySelector(":scope > .narr")) {
+    const w = document.createElement("div"); w.className = "viswrap"; vis.before(w); w.append(vis);
+    inner.classList.add("pin"); s.wrap = w; s.vis = vis;
+  }
+  const host = s.el.querySelector(".narr");
+  if (!host || !s.steps.length) return;
+  s.cards = s.steps.map((st) => {
+    const c = document.createElement("div"); c.className = "card";
+    c.innerHTML = `<div class="k${st.warn ? " warn" : ""}"><b>${String(s.n).padStart(2, "0")}</b>${U(st.kicker || s.name)}</div><div>${st.html}</div>`;
+    host.append(c);
+    return c;
+  });
+  const dots = document.createElement("div"); dots.className = "dots";
+  s.dots = s.steps.map(() => { const i = document.createElement("i"); dots.append(i); return i; });
+  if (s.steps.length > 1) host.append(dots);
+});
+
+// film call-outs
+const bubbles = $("#bubbles");
+beats.forEach((b) => {
+  const el = document.createElement("div");
+  el.className = "bubble" + (b.note ? " note" : "");
+  el.style.left = `${b.box[0] * 100}%`; el.style.top = `${b.box[1] * 100}%`; el.style.maxWidth = `${(b.w || 0.3) * 100}cqw`;
+  const words = b.text.split(/\s+/);
+  el.innerHTML = `<div class="k${b.kicker === "Control" ? " warn" : ""}"><b>${String(b.n).padStart(2, "0")}</b>${U(b.kicker || b.chapter)}</div><p>${words.map((w) => `<span class="w">${w}</span>`).join(" ")}</p>`;
+  b.el = el; b.words = [...el.querySelectorAll(".w")]; b.revealed = -1;
+  bubbles.append(el);
+});
+
+// HUD: track, chapter menu, play
+const track = $("#track"), menu = $("#menu"), menuBtn = $("#hud-menu");
+CH.forEach((c) => {
+  const s = document.createElement("button");
+  s.className = "seg"; s.style.flexGrow = c.len; s.setAttribute("aria-label", `Go to ${c.name}`); s.title = c.name;
+  s.innerHTML = "<i></i>"; c.seg = s; c.fill = s.firstChild;
+  s.addEventListener("click", (e) => { if (e.detail === 0) jumpTo(c.start + 4); });
+  track.append(s);
+  const li = document.createElement("li"), mb = document.createElement("button");
+  mb.innerHTML = `<span class="num">${String(c.n).padStart(2, "0")}</span>${c.name}`;
+  mb.addEventListener("click", () => { jumpTo(c.start + 4); menu.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); });
+  li.append(mb); menu.append(li); c.mbtn = mb;
+});
+menuBtn.addEventListener("click", () => { menu.hidden = !menu.hidden; menuBtn.setAttribute("aria-expanded", String(!menu.hidden)); });
+const trackPx = (e) => {
+  const r = track.getBoundingClientRect(), f = clamp((e.clientX - r.left) / r.width, 0, 1);
+  return f * TOTAL;
+};
+track.addEventListener("pointerdown", (e) => { track.setPointerCapture(e.pointerId); jumpTo(trackPx(e), true); });
+track.addEventListener("pointermove", (e) => { if (e.buttons && track.hasPointerCapture(e.pointerId)) jumpTo(trackPx(e), true); });
+
+let playing = false, lastTs = 0;
+const playBtn = $("#hud-play");
+const stopPlay = () => { if (!playing) return; playing = false; playBtn.setAttribute("aria-pressed", "false"); };
+playBtn.addEventListener("click", () => {
+  if (playing) return stopPlay();
+  if (target >= TOTAL - 2) jumpTo(0);
+  playing = true; lastTs = 0; playBtn.setAttribute("aria-pressed", "true");
+});
+["wheel", "touchstart"].forEach((ev) => addEventListener(ev, stopPlay, { passive: true }));
+addEventListener("keydown", (e) => {
+  if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) stopPlay();
+  if (e.key === "Escape") { menu.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); }
+});
+
+// scroll is the only clock; controls move it. jumpTo: to a story position; scrubTo: to where a scene shows a value
+function jumpTo(px, snap) {
+  stopPlay();
+  px = clamp(px, 0, TOTAL);
+  scrollTo(0, top + px);
+  if (snap || Math.abs(px - pos) > 1500) pos = target = px;
+  dirty();
+}
+function scrubTo(sc, f, v, range = [0, 1]) {
+  const cur = sc.p ?? 0;
+  let best = null, bestErr = Infinity;
+  for (let p = range[0]; p <= range[1] + 1e-9; p += 0.0025) {
+    const err = Math.abs(f(p) - v), dist = Math.abs(p - cur);
+    if (err < bestErr - 1e-6 || (Math.abs(err - bestErr) < 1e-6 && dist < Math.abs(best - cur))) { bestErr = err; best = p; }
+  }
+  if (best != null) jumpTo(sc.start + best * sc.len, true);
+}
+
+// ---------------------------------------------------------------------------------------------- the loop
+const leads = $("#leads"), marks = $("#marks"), liberty = $("#liberty"), hint = $("#hint");
+const svgNS = "http://www.w3.org/2000/svg", pathPool = [], markPool = [];
+const FILM_LIB = { title: "Background: the model’s ink map of this page, dimmed and blurred",
+  scroll: "From the scroll’s own CT · lighting, materials, lift-off and glow are presentation",
+  unroll: "Both shapes are the organizers’ mesh · the motion between them is animation",
+  zoomA: "The model’s ink output · nothing drawn or enhanced", relief: "Height: CT-measured sheet offset ×6, smoothed ~70 µm",
+  zoomB: "At letter scale the ink map dissolves into the raw CT" };
+let pos = 0, target = 0, lastPos = -1, force = true;
+const dirty = () => { force = true; };
+
+function pointer(i, r, ax, ay, o, draw) {
+  // a pointer from the nearest edge of rect r to (ax, ay): leaves the card vertically or sideways, then bends to the target
+  const vertical = ay < r.y || ay > r.y + r.h;
+  if (!vertical && ax >= r.x && ax <= r.x + r.w) return false;
+  const sx = vertical ? clamp(ax, r.x + 18, r.x + r.w - 18) : ax < r.x ? r.x : r.x + r.w;
+  const sy = vertical ? (ay < r.y ? r.y : r.y + r.h) : clamp(ay, r.y + 14, r.y + r.h - 14);
+  const [cx, cy] = vertical ? [sx, ay] : [ax, sy];
+  let q = pathPool[i];
+  if (!q) { q = document.createElementNS(svgNS, "path"); q.setAttribute("pathLength", "1"); leads.append(q); pathPool[i] = q; }
+  q.setAttribute("d", `M${sx.toFixed(1)},${sy.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${ax.toFixed(1)},${ay.toFixed(1)}`);
+  q.style.opacity = o; q.style.strokeDashoffset = 1 - draw;
+  let m = markPool[i];
+  if (!m) { m = document.createElement("div"); m.className = "mark"; marks.append(m); markPool[i] = m; }
+  m.style.left = `${ax}px`; m.style.top = `${ay}px`; m.style.opacity = o; m.style.transform = `scale(${0.6 + 0.4 * o})`;
+  return true;
+}
+
+function render() {
+  const wide = !narrow();
+  let np = 0;
+  // film layer
+  const filmO = 1 - ramp(pos, FILM_PX - FADE / 2, FILM_PX + FADE / 2);
+  const filmEl = $("#L-film");
+  filmEl.style.opacity = filmO; filmEl.style.visibility = filmO > 0.001 ? "visible" : "hidden";
+  const t = filmTimeAt(Math.min(pos, FILM_PX));
+  if (filmO > 0.001) {
+    if (!video.seeking && video.readyState >= 1 && Math.abs(video.currentTime - t) > 0.5 / FPS) video.currentTime = Math.min(t, FILM_END - 0.04);
+    beats.forEach((b) => {
+      const fin = clamp((t - b.t0) * FPS / 9, 0, 1), fout = clamp((b.t1 - t) * FPS / 9, 0, 1), o = ease(Math.min(fin, fout)) * filmO;
+      b.el.style.visibility = o > 0.001 ? "visible" : "hidden";
+      if (o <= 0.001) return;
+      b.el.style.opacity = o;
+      b.el.style.transform = `translateY(${(1 - ease(fin)) * 14}px) scale(${0.985 + 0.015 * ease(fin)})`;
+      const n = b.words.length, r = reduce ? n : clamp((t - b.t0) / Math.max(0.5, 0.35 * (b.t1 - b.t0)), 0, 1) * n * 1.15, rq = Math.round(r * 8) / 8;
+      if (rq !== b.revealed) { b.revealed = rq; b.words.forEach((w, i) => { w.style.opacity = clamp(rq - i + 0.25, 0.18, 1); }); }
+      if (!b.at) return;
+      const fr = rel(frame.getBoundingClientRect()), br = rel(b.el.getBoundingClientRect());
+      b.at.forEach(([ax, ay]) => {
+        const X = fr.x + ax * fr.w, Y = fr.y + ay * fr.h;
+        if (wide) { if (pointer(np, br, X, Y, o, clamp((t - b.t0) * FPS / 18, 0, 1))) np++; }
+        else {      // narrow: no pointer, just the target ring on the frame
+          let m = markPool[np];
+          if (!m) { m = document.createElement("div"); m.className = "mark"; marks.append(m); markPool[np] = m; }
+          m.style.left = `${X}px`; m.style.top = `${Y}px`; m.style.opacity = o; m.style.transform = "scale(1)";
+          if (pathPool[np]) pathPool[np].style.opacity = 0;
+          np++;
+        }
+      });
+    });
+  } else beats.forEach((b) => { b.el.style.visibility = "hidden"; });
+  hint.style.opacity = clamp(1 - pos / 60, 0, 1);
+  // scenes
+  SCENES.forEach((s, i) => {
+    const end = s.start + s.len, last = i === SCENES.length - 1;
+    const o = ramp(pos, s.start - FADE / 2, s.start + FADE / 2) * (last ? 1 : 1 - ramp(pos, end - FADE / 2, end + FADE / 2));
+    s.el.style.opacity = o; s.el.style.visibility = o > 0.001 ? "visible" : "hidden";
+    if (o <= 0.001) return;
+    const p = clamp((pos - s.start) / s.len, 0, 1);
+    s.p = p;
+    s.update(p);
+    // text taller than the screen drifts up through the scene
+    const inner = s.el.querySelector(".inner"), pinned = !wide && !!s.wrap;
+    const mover = pinned ? s.vis : inner, other = pinned ? inner : s.vis;
+    const over = pinned ? s.vis.scrollHeight - s.wrap.clientHeight : inner.scrollHeight - s.el.clientHeight;
+    mover.style.transform = over > 4 ? `translateY(${-over * ease(ramp(p, 0.08, 0.92))}px)` : "";
+    if (other) other.style.transform = "";
+    if (!s.cards) return;
+    const fw = 40 / s.len;
+    let best = -1, bestO = 0;
+    s.steps.forEach((st, j) => {
+      const a = st.p[0] <= 0 ? 1 : ramp(p, st.p[0], st.p[0] + 2 * fw), z = st.p[1] >= 1 ? 1 : 1 - ramp(p, st.p[1] - 2 * fw, st.p[1]);
+      const so = ease(Math.min(a, z)), c = s.cards[j];
+      c.style.opacity = so; c.style.transform = `translateY(${(1 - so) * 10}px)`; c.style.visibility = so > 0.01 ? "visible" : "hidden";
+      if (so > bestO) { bestO = so; best = j; }
+      if (wide && st.at && so * o > 0.01) {
+        const pt = st.at();
+        if (pt && pointer(np, rel(c.getBoundingClientRect()), pt[0], pt[1], so * o, ramp(p, st.p[0], st.p[0] + 0.05) || (st.p[0] <= 0 ? 1 : 0))) np++;
+      }
+    });
+    s.dots && s.dots.forEach((d, j) => d.classList.toggle("on", j === best));
+    // phones: the narration box is as tall as the card showing, so the visual gets the rest of the screen
+    const host = s.cards[0].parentNode;
+    if (pinned) {
+      let hw = 0, ww = 0;
+      s.cards.forEach((c) => { const w8 = +c.style.opacity; if (w8 > 0.01) { hw += c.offsetHeight * w8; ww += w8; } });
+      host.style.height = `${ww ? hw / ww : s.cards[Math.max(0, best)].offsetHeight}px`;
+    } else host.style.height = "";
+  });
+  for (let i = np; i < pathPool.length; i++) if (pathPool[i]) pathPool[i].style.opacity = 0;
+  for (let i = np; i < markPool.length; i++) if (markPool[i]) markPool[i].style.opacity = 0;
+  // chapter, HUD, liberty note
+  let ci = 0;
+  CH.forEach((c, i) => { if (pos >= c.start - 0.5) ci = i; });
+  const c = CH[ci];
+  CH.forEach((ch, i) => {
+    ch.fill.style.transform = `scaleX(${clamp((pos - ch.start) / ch.len, 0, 1)})`;
+    ch.seg.classList.toggle("on", i === ci); ch.mbtn.classList.toggle("on", i === ci);
+  });
+  $("#hud-n").textContent = String(c.n).padStart(2, "0"); if (c.hud !== true) { $("#hud-ch").innerHTML = U(c.name); CH.forEach((x) => { x.hud = false; }); c.hud = true; }
+  const lib = c.kind === "film" ? FILM_LIB[c.id] || "" : c.scene.liberty || "";
+  if (liberty.textContent !== lib) liberty.textContent = lib;
+}
+
+function tick(ts) {
+  requestAnimationFrame(tick);
+  if (playing) {
+    const dt = lastTs ? Math.min(0.1, (ts - lastTs) / 1000) : 0;
+    lastTs = ts;
+    const c = CH.find((ch) => target >= ch.start && target < ch.start + ch.len) || CH[CH.length - 1];
+    const speed = c.kind === "film" ? (filmPxAt(filmTimeAt(target) + 0.25) - target) / 0.25 : c.scene.len / c.scene.play;
+    const next = Math.min(TOTAL, target + speed * dt);
+    scrollTo(0, top + next); target = next;
+    if (next >= TOTAL) stopPlay();
+  } else target = clamp(scrollY - top, 0, TOTAL);
+  const d = target - pos;
+  pos = reduce || Math.abs(d) < 0.5 ? target : pos + d * 0.18;
+  if (!force && Math.abs(pos - lastPos) < 0.05) return;
+  force = false; lastPos = pos;
+  render();
+}
+
+addEventListener("resize", () => { layout(); dirty(); });
+addEventListener("load", () => { layout(); dirty(); });
+layout();
+pos = target = clamp(scrollY - top, 0, TOTAL);
+requestAnimationFrame(tick);
+
+// ---------------------------------------------------------------------------------------------- load the film
+// An init segment plus fragmented-MP4 chunks (each under the per-file limit), stitched with Media Source; a keyframe every
+// few frames so any moment shows quickly while scrolling. Opened from disk, fetch() is blocked: the whole local file instead.
+video.addEventListener("loadedmetadata", () => { video.currentTime = filmTimeAt(Math.min(pos, FILM_PX)); }, { once: true });
+const direct = () => { video.src = "film/film_frag.mp4"; };
+(async () => {
+  let m;
+  try { m = await (await fetch("film/film.json")).json(); } catch { return direct(); }
+  const MS = window.ManagedMediaSource || window.MediaSource;
+  if (!MS || !MS.isTypeSupported(m.codec)) return direct();
+  const ms = new MS();
+  if (window.ManagedMediaSource) video.disableRemotePlayback = true;
+  video.src = URL.createObjectURL(ms);
+  ms.addEventListener("sourceopen", async () => {
+    const sb = ms.addSourceBuffer(m.codec);
+    const append = (buf) => new Promise((ok) => { sb.addEventListener("updateend", ok, { once: true }); sb.appendBuffer(buf); });
+    const parts = [m.init, ...m.segments], bufs = parts.map((p) => fetch("film/" + p).then((r) => r.arrayBuffer()));
+    for (let i = 0; i < parts.length; i++) await append(await bufs[i]);
+    if (ms.readyState === "open") ms.endOfStream();
+    video.currentTime = filmTimeAt(Math.min(pos, FILM_PX)); dirty();
+  }, { once: true });
+})();
+})();
+</script>
+</html>

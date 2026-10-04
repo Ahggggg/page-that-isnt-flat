@@ -1,0 +1,12 @@
+# downloads and outputs of the tools (see REPRODUCE.md and FILM.md)
+/data/
+/runs/
+/film-inputs/
+__pycache__/
+*.pyc
+film-making/app/node_modules/
+film-making/app/out/
+film-making/app/public/data/
+film-making/app/public/frames/
+film-making/blender/data/
+film/film_frag.mp4
